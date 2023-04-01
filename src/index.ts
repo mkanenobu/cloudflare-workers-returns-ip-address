@@ -8,24 +8,21 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import type { ExportedHandler } from "@cloudflare/workers-types";
-
-export interface Env {
-  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-  // MY_KV_NAMESPACE: KVNamespace;
-  //
-  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-  // MY_DURABLE_OBJECT: DurableObjectNamespace;
-  //
-  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-  // MY_BUCKET: R2Bucket;
-  //
-  // Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-  // MY_SERVICE: Fetcher;
-}
+import type { Env } from "./env";
+import { parseRequestUrl } from "./parse-request-url";
 
 type Handler = ExportedHandler<Env>;
 
 const fetch: Handler["fetch"] = async (req): Promise<Response> => {
+  if (req.method !== "GET") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const url = parseRequestUrl(req.url);
+  if (url.pathname !== "/") {
+    return new Response("Not found", { status: 404 });
+  }
+
   const ip = req.headers.get("CF-Connecting-IP");
   return new Response(ip?.replaceAll('"', ""));
 };
